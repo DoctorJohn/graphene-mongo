@@ -30,7 +30,7 @@ class FileFieldType(graphene.ObjectType):
         v = getattr(self.instance, self.key)
         data = v.read()
         if data is not None:
-            return base64.b64encode(data)
+            return str(base64.b64encode(data))
         return None
 
 
