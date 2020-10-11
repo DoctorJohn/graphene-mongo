@@ -14,6 +14,7 @@ from mongoengine.base import get_document
 from promise import Promise
 from graphql_relay import from_global_id
 from graphene.relay import ConnectionField
+from graphene.relay.connection import page_info_adapter, connection_adapter
 from graphene.types.argument import to_arguments
 from graphene.types.dynamic import Dynamic
 from graphene.types.structures import Structure
@@ -167,7 +168,7 @@ class MongoengineConnectionField(ConnectionField):
                     }
                     filter_type = advanced_filter_types.get(each, filter_type)
                     filter_args[field + "__" + each] = graphene.Argument(
-                        type=filter_type
+                        type_=filter_type
                     )
         return filter_args
 
@@ -354,7 +355,7 @@ class MongoengineConnectionField(ConnectionField):
                                                pageinfo_type=graphene.PageInfo)
 
         connection.iterable = iterables
-        connection.list_length = list_length
+        connection.array_length = list_length
         return connection
 
     def chained_resolver(self, resolver, is_partial, root, info, **args):
@@ -420,7 +421,7 @@ class MongoengineConnectionField(ConnectionField):
             return Promise.resolve(iterable).then(on_resolve)
         return on_resolve(iterable)
 
-    def get_resolver(self, parent_resolver):
+    def wrap_resolve(self, parent_resolver):
         super_resolver = self.resolver or parent_resolver
         resolver = partial(
             self.chained_resolver, super_resolver, isinstance(super_resolver, partial)

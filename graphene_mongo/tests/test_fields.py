@@ -51,7 +51,7 @@ def test_default_resolver_with_colliding_objects_field():
     assert 0 == len(connection.iterable)
 
 
-def test_default_resolver_connection_list_length(fixtures):
+def test_default_resolver_connection_array_length(fixtures):
     field = MongoengineConnectionField(nodes.ArticleNode)
 
     connection = field.default_resolver(None, {}, **{"first": 1})
