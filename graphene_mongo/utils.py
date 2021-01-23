@@ -6,8 +6,8 @@ from collections import OrderedDict
 import mongoengine
 from graphene import Node
 from graphene.utils.trim_docstring import trim_docstring
-from graphql.utils.ast_to_dict import ast_to_dict
 from graphql_relay.connection.arrayconnection import offset_to_cursor
+from graphql.language import FieldNode, FragmentSpreadNode, InlineFragmentNode, SelectionNode, DefinitionNode
 
 
 def get_model_fields(model, excluding=None):
@@ -111,8 +111,8 @@ def collect_query_fields(node, fragments):
     """Recursively collects fields from the AST
 
     Args:
-        node (dict): A node in the AST
-        fragments (dict): Fragment definitions
+        node Node: A node in the AST
+        fragments Dict[str, FragmentDefinitionNode]: Fragment definitions
 
     Returns:
         A dict mapping each field found, along with their sub fields.
@@ -129,20 +129,15 @@ def collect_query_fields(node, fragments):
 
     field = {}
 
-    if node.get('selection_set'):
-        for leaf in node['selection_set']['selections']:
-            if leaf['kind'] == 'Field':
-                field.update({
-                    leaf['name']['value']: collect_query_fields(leaf, fragments)
-                })
-            elif leaf['kind'] == 'FragmentSpread':
-                field.update(collect_query_fields(fragments[leaf['name']['value']],
-                                                  fragments))
-            elif leaf['kind'] == 'InlineFragment':
-                field.update({
-                    leaf["type_condition"]["name"]['value']: collect_query_fields(leaf, fragments)
-                })
-                pass
+    if isinstance(node, SelectionNode) or isinstance(node, DefinitionNode):
+        selections = node.selection_set.selections if node.selection_set else []
+        for leaf in selections:
+            if isinstance(leaf, FieldNode):
+                field.update({leaf.name.value: collect_query_fields(leaf, fragments)})
+            elif isinstance(leaf, FragmentSpreadNode):
+                field.update(collect_query_fields(fragments[leaf.name.value], fragments))
+            elif isinstance(leaf, InlineFragmentNode):
+                field.update({leaf.type_condition: collect_query_fields(leaf, fragments)})
 
     return field
 
@@ -151,17 +146,22 @@ def get_query_fields(info):
     """A convenience function to call collect_query_fields with info
 
     Args:
-        info (ResolveInfo)
+        info (GraphQLResolveInfo)
 
     Returns:
         dict: Returned from collect_query_fields
     """
 
+    """
     fragments = {}
     node = ast_to_dict(info.field_asts[0])
 
     for name, value in info.fragments.items():
         fragments[name] = ast_to_dict(value)
+    """
+
+    fragments = info.fragments
+    node = info.field_nodes[0]
 
     query = collect_query_fields(node, fragments)
     if "edges" in query:
