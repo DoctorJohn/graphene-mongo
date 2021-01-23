@@ -9,12 +9,11 @@ from bson import DBRef
 from graphene import Context
 from graphene.types.utils import get_type
 from graphene.utils.str_converters import to_snake_case
-from graphql import ResolveInfo
+from graphql import GraphQLResolveInfo as ResolveInfo
 from mongoengine.base import get_document
 from promise import Promise
 from graphql_relay import from_global_id
 from graphene.relay import ConnectionField
-from graphene.relay.connection import page_info_adapter, connection_adapter
 from graphene.types.argument import to_arguments
 from graphene.types.dynamic import Dynamic
 from graphene.types.structures import Structure
